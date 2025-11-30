@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SHEN Core Engine (beta)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Vazirmatn', sans-serif;
+        background-color: #09090b; /* zinc-950 extremely dark */
+        color: #e8e8e8;
+        overflow-x: hidden;
+      }
+      
+      /* --- Custom Loader Animation --- */
+      .loader {
+        border: 4px solid #3f3f46;
+        border-top: 4px solid #ef4444; /* Red */
+        border-right: 4px solid #22c55e; /* Green */
+        border-bottom: 4px solid #3b82f6; /* Blue */
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        filter: blur(0.5px);
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* --- TRAIN STRATEGY (Corrected Logic) --- */
+      /* Clockwise Train (For Input) */
+      @keyframes liquid-train-pause {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        20% { transform: translate(-50%, -50%) rotate(90deg); }
+        40% { transform: translate(-50%, -50%) rotate(90deg); }
+        60% { transform: translate(-50%, -50%) rotate(270deg); }
+        80% { transform: translate(-50%, -50%) rotate(270deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+      }
+
+      /* Counter-Clockwise Train (For Active Buttons) */
+      @keyframes liquid-train-reverse {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        20% { transform: translate(-50%, -50%) rotate(-90deg); }  /* Go Left */
+        40% { transform: translate(-50%, -50%) rotate(-90deg); }  /* Pause Left */
+        60% { transform: translate(-50%, -50%) rotate(-270deg); } /* Go Right */
+        80% { transform: translate(-50%, -50%) rotate(-270deg); } /* Pause Right */
+        100% { transform: translate(-50%, -50%) rotate(-360deg); } /* Back Top */
+      }
+
+      /* Constant Spin for One-Shot click (Super Fast) */
+      @keyframes spin-center {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+      }
+
+      /* --- Text Flash Animation --- */
+      @keyframes text-flash {
+        0%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(255,255,255,0.5); }
+        50% { opacity: 0.5; text-shadow: none; }
+      }
+
+      /* --- Liquid Gradient Setup --- */
+      .liquid-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 9999px;
+        /* Padding creates the border thickness because inner element covers the rest */
+        transform: translateZ(0);
+      }
+      
+      /* Base Liquid BG - Positioning - OVERSIZED to prevent corner breaks */
+      .liquid-bg {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 300%; 
+        padding-bottom: 300%; 
+        transform-origin: center center;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+
+      /* 1. TRUE RGB TRAIN (For Input & Active Buttons) - Pure Standard RGB */
+      .train-gradient {
+        background: conic-gradient(
+          transparent 0deg,
+          transparent 270deg,
+          #ff0000 290deg,   /* Pure Red */
+          #00ff00 315deg,   /* Pure Green */
+          #0000ff 340deg,   /* Pure Blue */
+          transparent 360deg
+        );
+      }
+
+      /* 2. HOLOGRAPHIC AURA (For Buttons Click) - Soft, Transparent, Ghostly */
+      .holo-gradient {
+        background: conic-gradient(
+          transparent 0deg,
+          transparent 120deg,
+          rgba(139, 92, 246, 0.5) 180deg,   /* Violet */
+          rgba(59, 130, 246, 0.5) 240deg,   /* Blue */
+          rgba(16, 185, 129, 0.5) 300deg,   /* Green */
+          rgba(255, 255, 255, 0.9) 340deg,  /* White Tip */
+          transparent 360deg
+        );
+        filter: blur(8px);
+      }
+
+      /* Train mode animation - 6s cycle (Clockwise) */
+      .train-mode .liquid-bg {
+        animation: liquid-train-pause 6s ease-in-out infinite;
+      }
+
+      /* Reverse Train mode animation - 6s cycle (Counter-Clockwise) */
+      .reverse-train-mode .liquid-bg {
+        animation: liquid-train-reverse 6s ease-in-out infinite;
+      }
+
+      /* Spin mode animation - SUPER FAST (0.15s) */
+      .spin-mode .liquid-bg {
+        animation: spin-center 0.15s linear forwards;
+      }
+
+      /* Flash text class */
+      .flash-text span {
+        animation: text-flash 0.05s ease-in-out 3;
+      }
+
+      /* --- Metallic Sweep Shine Animation --- */
+      @keyframes sweep-pass {
+        0% { transform: translateX(200%) skewX(-45deg); }
+        100% { transform: translateX(-200%) skewX(-45deg); }
+      }
+
+      .sweep-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+        border-radius: 9999px;
+        mix-blend-mode: overlay;
+      }
+
+      .sweep-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 60%;
+        height: 100%;
+        /* Sharp White/Black/Silver Transparent Gradient */
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(0,0,0,0.4) 30%,
+          rgba(255,255,255,0.9) 50%, /* Bright silver center */
+          rgba(0,0,0,0.4) 70%,
+          transparent 100%
+        );
+        transform: translateX(200%) skewX(-45deg); 
+        filter: blur(2px);
+      }
+
+      .sweep-active .sweep-bar {
+        animation: sweep-pass 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      }
+
+      /* Placeholder override - FORCED VISIBILITY */
+      input::placeholder {
+        color: #a1a1aa !important; /* zinc-400 */
+        opacity: 1 !important;
+      }
+      
+      input {
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #09090b; }
+      ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
